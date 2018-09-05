@@ -12,6 +12,8 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path"
+	"strings"
 	"syscall"
 	"time"
 
@@ -67,8 +69,19 @@ func main() {
 		}
 	}()
 
+	pub := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		p := path.Join("./public/", r.URL.Path)
+		if s, err := os.Stat(p); err == nil && !s.IsDir() {
+			http.ServeFile(w, r, p)
+		} else {
+			http.ServeFile(w, r, "./public/index.html")
+		}
+	})
+
 	srv := &http.Server{Addr: *addr}
-	http.Handle("/", logRequest(fs))
+	http.Handle("/idx/", logRequest(http.StripPrefix("/idx/", fs)))
+	http.Handle("/dl/", logRequest(http.StripPrefix("/dl/", nodir(http.FileServer(http.Dir(fs.Root))))))
+	http.Handle("/", pub)
 
 	go func() {
 		sig := make(chan os.Signal, 1)
@@ -99,6 +112,17 @@ func logRequest(han http.Handler) http.Handler {
 		u, _, _ := r.BasicAuth()
 		h, _, _ := net.SplitHostPort(r.RemoteAddr)
 		logOut.Printf("%s - %s [%s] \"%s %s %s\" 0 0 \"%s\" \"%s\"\n", h, orHyphen(u), time.Now().Format("02/Jan/2006:15:04:05 -0700"), r.Method, r.URL, r.Proto, orHyphen(r.Referer()), orHyphen(r.UserAgent()))
+		han.ServeHTTP(w, r)
+	})
+}
+
+func nodir(han http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "" || strings.HasSuffix(r.URL.Path, "/") {
+			http.NotFound(w, r)
+			return
+		}
+
 		han.ServeHTTP(w, r)
 	})
 }

@@ -14,6 +14,7 @@ import (
 	"path"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -44,7 +45,6 @@ func New(dbp string, root string) (*CachedFS, error) {
 	if err != nil {
 		return nil, err
 	}
-	db.SetMaxOpenConns(1)
 
 	if _, err := db.Exec(`
 		CREATE TABLE IF NOT EXISTS dirs (path TEXT);
@@ -72,6 +72,12 @@ func New(dbp string, root string) (*CachedFS, error) {
 		db:   db,
 		dbp:  dbp,
 		Root: r,
+	}
+
+	// Check if database already has root entry
+	var id int64
+	if fs.qd.QueryRow("/").Scan(&id) == nil {
+		fs.dbr++
 	}
 
 	return &fs, nil
@@ -136,7 +142,7 @@ func (fs *CachedFS) Fill() (int, error) {
 			}
 
 			cnt++
-			if cnt%32768 == 0 {
+			if cnt%16384 == 0 {
 				if err := tx.Commit(); err != nil {
 					return err
 				}
@@ -225,12 +231,6 @@ func (fs *CachedFS) DBReady() bool {
 	return fs.db != nil && atomic.LoadInt32(&fs.dbr) != 0
 }
 
-// File data sent to client
-type File struct {
-	Name string `json:"name"`
-	Type string `json:"type"`
-}
-
 var (
 	escGlob  = regexp.MustCompile("[][*?]")
 	escLike  = regexp.MustCompile("[%_`]")
@@ -273,6 +273,24 @@ func cleanPath(p string) string {
 	return p
 }
 
+// File data sent to client
+type File struct {
+	Name string `json:"name"`
+	Type string `json:"type"`
+}
+
+// Files list (sortable)
+type Files []File
+
+func (f Files) Len() int      { return len(f) }
+func (f Files) Swap(i, j int) { f[i], f[j] = f[j], f[i] }
+func (f Files) Less(i, j int) bool {
+	if f[i].Type == f[j].Type {
+		return strings.ToLower(f[i].Name) < strings.ToLower(f[j].Name)
+	}
+	return f[i].Type < f[j].Type
+}
+
 func (fs *CachedFS) serveCache(w http.ResponseWriter, r *http.Request) {
 	if !fs.DBReady() {
 		http.Error(w, "503 service unavailable", http.StatusServiceUnavailable)
@@ -296,7 +314,7 @@ func (fs *CachedFS) serveCache(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp := make([]File, 0)
+	resp := make(Files, 0)
 	search := escapeLike(r.URL.Query().Get("q"))
 
 	rows, err := fs.qs.QueryContext(ctx, p, search)
@@ -328,6 +346,8 @@ func (fs *CachedFS) serveCache(w http.ResponseWriter, r *http.Request) {
 		goto interr
 	}
 
+	sort.Sort(resp)
+
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(resp)
 	return
@@ -341,7 +361,7 @@ interr:
 func (fs *CachedFS) serveLive(w http.ResponseWriter, r *http.Request) {
 	p := cleanPath(filepath.Join(fs.Root, r.URL.Path))
 
-	resp := make([]File, 0)
+	resp := make(Files, 0)
 	search, err := regexp.Compile(escapeRegex(r.URL.Query().Get("q")))
 
 	if err == nil {
@@ -397,6 +417,8 @@ func (fs *CachedFS) serveLive(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
+
+	sort.Sort(resp)
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(resp)
