@@ -18,14 +18,18 @@ import (
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/ulule/limiter"
+	"github.com/ulule/limiter/drivers/middleware/stdlib"
+	"github.com/ulule/limiter/drivers/store/memory"
 )
 
 var (
-	addr    = flag.String("a", ":80", "TCP network address to listen for connections")
-	db      = flag.String("d", ":memory:", "Database location")
-	dir     = flag.String("r", ".", "Root directory to serve")
-	refresh = flag.String("i", "1h", "Refresh interval")
-	cached  = flag.Bool("cached", false, "Serve everything from cache (rather than search/recursive queries only)")
+	addr      = flag.String("a", ":80", "TCP network address to listen for connections")
+	db        = flag.String("d", ":memory:", "Database location")
+	dir       = flag.String("r", ".", "Root directory to serve")
+	refresh   = flag.String("i", "1h", "Refresh interval")
+	forwarded = flag.Bool("forwarded", false, "Trust X-Real-IP and X-Forwarded-For headers")
+	cached    = flag.Bool("cached", false, "Serve everything from cache (rather than search/recursive queries only)")
 )
 
 var logOut = log.New(os.Stdout, "", 0)
@@ -78,9 +82,14 @@ func main() {
 		}
 	})
 
+	limit := stdlib.NewMiddleware(
+		limiter.New(memory.NewStore(), limiter.Rate{Period: 1 * time.Second, Limit: 5}),
+		stdlib.WithForwardHeader(*forwarded),
+	)
+
 	srv := &http.Server{Addr: *addr}
-	http.Handle("/idx/", logRequest(http.StripPrefix("/idx/", fs)))
-	http.Handle("/dl/", logRequest(http.StripPrefix("/dl/", nodir(http.FileServer(http.Dir(fs.Root))))))
+	http.Handle("/idx/", limit.Handler(logRequest(http.StripPrefix("/idx/", fs))))
+	http.Handle("/dl/", limit.Handler(logRequest(http.StripPrefix("/dl/", nodir(http.FileServer(http.Dir(fs.Root)))))))
 	http.Handle("/sitemap.txt", http.HandlerFunc(fs.Sitemap))
 	http.Handle("/", pub)
 

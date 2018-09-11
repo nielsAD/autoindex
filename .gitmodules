@@ -7,6 +7,6 @@
 [submodule "vendor/github.com/karrick/godirwalk"]
 	path = vendor/github.com/karrick/godirwalk
 	url = https://github.com/karrick/godirwalk.git
-[submodule "github.com/mattn/go-sqlite3"]
-	path = github.com/mattn/go-sqlite3
-	url = https://github.com/mattn/go-sqlite3.git
+[submodule "vendor/github.com/ulule/limiter"]
+	path = vendor/github.com/ulule/limiter
+	url = https://github.com/ulule/limiter.git
