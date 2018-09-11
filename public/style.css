@@ -1,0 +1,128 @@
+@font-face {
+	font-family: "icons";
+	src: url("/font.woff") format("woff");
+}
+* {
+	margin: 0;
+	padding: 0;
+}
+html {
+	background-color: white;
+	color: black;
+	font-family: sans-serif;
+	overflow-y: scroll;
+	white-space: nowrap;
+}
+body {
+	min-width: 250px;
+	max-width: 980px;
+	margin: 0 auto;
+}
+p      { margin: 3px 0; }
+main   { clear: both; }
+footer { text-align: center; }
+header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	white-space: nowrap;
+	margin: 1em 1em;
+}
+#path {
+	list-style-type: none;
+	display:flex;
+	align-items: center;
+	overflow: hidden;
+}
+#path li {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	font-size: 70%;
+}
+#path li + li:before {
+	content: "/";
+	margin: 0 0.3em;
+	font-weight: initial;
+}
+#path li:first-child { flex-shrink: 0; }
+#path li:last-child {
+	flex-shrink: 0;
+	font-weight: bold;
+	font-size: 100%;
+	margin-right: 0.3em;
+}
+#path span {
+	font-family: monospace;
+	font-size: 130%;
+	background-color: #eee9;
+}
+#search > * {
+	line-height: 2em;
+	padding: 6px;
+}
+#search input {
+	width: 4em;
+	color: #9999;
+	border: 1px solid #eee9;
+	text-overflow: ellipsis;
+	transition: width 0.1s;
+}
+#search input:focus {
+	color: black;
+	width: 21em;
+}
+#search button {
+	min-width: 2.5em;
+	cursor: pointer;
+	background-color: #eee9;
+	border: 1px solid #eee9;
+}
+#search button span {
+	display: inline-block;
+	font-family: icons;
+	transform: scale(1.5,1.5);
+}
+#files {
+	list-style-type: none;
+	margin: 0 1em 2em;
+	padding: 1px;
+	border: 1px solid #888;
+	border-radius: 10px;
+	overflow-x: auto;
+	transition: opacity 0.1s;
+}
+#files li                 { padding: 5px 15px; }
+#files li:nth-child(even) { background-color: #eee9; }
+#files li:last-child      { border-radius: 0 0 10px 10px; }
+#files li a               { font-family: monospace; }
+.u:before { content: "⬆️"; }
+.d:before { content: "📁"; }
+.f:before { content: "📄"; }
+.u:before, .d:before, .f:before {
+	font-family: icons;
+	display: inline-block;
+	padding: 0 7px 0 0;
+	min-width: 1.2em;
+	text-align: center;
+	text-decoration: none;
+	color: black;
+}
+.error {
+	color: red;
+	font-weight: bold;
+	text-align: center;
+}
+.loading #path:after {
+	content: " ";
+	display: inline-block;
+	border-radius: 50%;
+	background-color: black;
+	width: 0.7em;
+	height: 0.7em;
+	animation:blink normal 1s infinite ease-in-out;
+}
+.loading #files { opacity: 0.3; }
+@keyframes blink {
+	0%, 100% { transform: scale(0.3); opacity: 0.0; }
+	50%      { transform: scale(1.0); opacity: 1.0; }
+}
