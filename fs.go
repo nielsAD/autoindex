@@ -25,6 +25,7 @@ import (
 
 // CachedFS struct
 type CachedFS struct {
+	ql     *sql.Stmt
 	qd     *sql.Stmt
 	qs     *sql.Stmt
 	db     *sql.DB
@@ -54,6 +55,12 @@ func New(dbp string, root string) (*CachedFS, error) {
 		return nil, err
 	}
 
+	ql, err := db.Prepare("SELECT dirs.path FROM dirs LIMIT 5000")
+	if err != nil {
+		db.Close()
+		return nil, err
+	}
+
 	qd, err := db.Prepare("SELECT dirs.rowid FROM dirs WHERE path GLOB ? LIMIT 1")
 	if err != nil {
 		db.Close()
@@ -67,6 +74,7 @@ func New(dbp string, root string) (*CachedFS, error) {
 	}
 
 	fs := CachedFS{
+		ql:   ql,
 		qd:   qd,
 		qs:   qs,
 		db:   db,
@@ -348,7 +356,7 @@ func (fs *CachedFS) serveCache(w http.ResponseWriter, r *http.Request) {
 
 	sort.Sort(resp)
 
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	json.NewEncoder(w).Encode(resp)
 	return
 
@@ -420,7 +428,7 @@ func (fs *CachedFS) serveLive(w http.ResponseWriter, r *http.Request) {
 
 	sort.Sort(resp)
 
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	json.NewEncoder(w).Encode(resp)
 }
 
@@ -430,4 +438,44 @@ func (fs *CachedFS) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	} else {
 		fs.serveLive(w, r)
 	}
+}
+
+// Sitemap serves a list of all directories
+func (fs *CachedFS) Sitemap(w http.ResponseWriter, r *http.Request) {
+	if !fs.DBReady() {
+		http.Error(w, "503 service unavailable", http.StatusServiceUnavailable)
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	defer cancel()
+
+	rows, err := fs.ql.QueryContext(ctx)
+	if err != nil {
+		goto interr
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var path string
+		err = rows.Scan(&path)
+		if err != nil {
+			goto interr
+		}
+
+		w.Write([]byte(path))
+		w.Write([]byte{'\n'})
+	}
+	err = rows.Err()
+	if err != nil {
+		goto interr
+	}
+
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	return
+
+interr:
+	h, _, _ := net.SplitHostPort(r.RemoteAddr)
+	logErr.Printf("%s \"%s %s %s\" \"%s\"\n", h, r.Method, r.URL, r.Proto, err.Error())
+	http.Error(w, err.Error(), http.StatusInternalServerError)
 }

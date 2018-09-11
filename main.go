@@ -81,6 +81,7 @@ func main() {
 	srv := &http.Server{Addr: *addr}
 	http.Handle("/idx/", logRequest(http.StripPrefix("/idx/", fs)))
 	http.Handle("/dl/", logRequest(http.StripPrefix("/dl/", nodir(http.FileServer(http.Dir(fs.Root))))))
+	http.Handle("/sitemap.txt", http.HandlerFunc(fs.Sitemap))
 	http.Handle("/", pub)
 
 	go func() {
