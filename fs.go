@@ -357,6 +357,7 @@ func (fs *CachedFS) serveCache(w http.ResponseWriter, r *http.Request) {
 	sort.Sort(resp)
 
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.Header().Set("Cache-Control", "max-age=60")
 	json.NewEncoder(w).Encode(resp)
 	return
 
@@ -429,6 +430,7 @@ func (fs *CachedFS) serveLive(w http.ResponseWriter, r *http.Request) {
 	sort.Sort(resp)
 
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.Header().Set("Cache-Control", "max-age=60")
 	json.NewEncoder(w).Encode(resp)
 }
 
@@ -472,6 +474,7 @@ func (fs *CachedFS) Sitemap(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	w.Header().Set("Cache-Control", "max-age=3600")
 	return
 
 interr:
