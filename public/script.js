@@ -1,3 +1,4 @@
+"use strict";
 const search = RegExp("[?&]q=([^&]+)");
 function setPath(crumbs, files, q, path, query) {
 	if (document.location.pathname != path || document.location.search != query) {
