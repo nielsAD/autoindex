@@ -90,7 +90,7 @@ func main() {
 	srv := &http.Server{Addr: *addr}
 	http.Handle("/idx/", limit.Handler(logRequest(http.StripPrefix("/idx/", fs))))
 	http.Handle("/dl/", limit.Handler(logRequest(http.StripPrefix("/dl/", nodir(http.FileServer(http.Dir(fs.Root)))))))
-	http.Handle("/sitemap.txt", http.HandlerFunc(fs.Sitemap))
+	http.Handle("/urllist.txt", http.HandlerFunc(fs.Sitemap))
 	http.Handle("/", pub)
 
 	go func() {

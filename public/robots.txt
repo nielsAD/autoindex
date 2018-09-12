@@ -1,4 +1,4 @@
 User-agent: *
 Disallow: /dl/
 Disallow: /idx/
-Sitemap: /sitemap.txt
+Sitemap: /urllist.txt

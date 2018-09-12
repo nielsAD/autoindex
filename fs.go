@@ -465,12 +465,9 @@ func (fs *CachedFS) Sitemap(w http.ResponseWriter, r *http.Request) {
 			goto interr
 		}
 
-		l := len(path)
-		if l > 1 {
-			path = path[:l-1]
-		}
-
-		w.Write([]byte(path))
+		w.Write([]byte("https://"))
+		w.Write([]byte(r.Host))
+		w.Write([]byte(path[:len(path)-1]))
 		w.Write([]byte{'\n'})
 	}
 	err = rows.Err()
