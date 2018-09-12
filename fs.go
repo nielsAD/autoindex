@@ -55,7 +55,7 @@ func New(dbp string, root string) (*CachedFS, error) {
 		return nil, err
 	}
 
-	ql, err := db.Prepare("SELECT dirs.path FROM dirs LIMIT 5000")
+	ql, err := db.Prepare("SELECT dirs.path FROM dirs LIMIT 50000")
 	if err != nil {
 		db.Close()
 		return nil, err
@@ -463,6 +463,11 @@ func (fs *CachedFS) Sitemap(w http.ResponseWriter, r *http.Request) {
 		err = rows.Scan(&path)
 		if err != nil {
 			goto interr
+		}
+
+		l := len(path)
+		if l > 1 {
+			path = path[:l-1]
 		}
 
 		w.Write([]byte(path))
