@@ -267,7 +267,7 @@ func escapeRegex(s string) string {
 	}
 	s = regexp.QuoteMeta(s)
 	s = escSpace.ReplaceAllString(s, ".*")
-	return ".*" + s + ".*"
+	return "(?i).*" + s + ".*"
 }
 
 func cleanPath(p string) string {
