@@ -11,11 +11,11 @@ function setPath(crumbs, files, q, path, query) {
 
 	function a(sp, href, text, cls, rel) {
 		let r = document.createElement("a");
-		r.appendChild(document.createTextNode(text));
+		r.appendChild(document.createTextNode(text.replace(/_/g, " ")));
 		r.setAttribute("href", href);
 		if (rel) r.setAttribute("rel", rel);
 		if (cls) r.classList.add(cls);
-		if (sp)	r.addEventListener( 'click', function(e){
+		if (sp)	r.addEventListener("click", function(e){
 			e.preventDefault();
 			setPath(crumbs, files, q, href, "");
 			});

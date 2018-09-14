@@ -94,7 +94,10 @@ header {
 #files li                 { padding: 5px 15px; }
 #files li:nth-child(even) { background-color: #eee9; }
 #files li:last-child      { border-radius: 0 0 10px 10px; }
-#files li a               { font-family: monospace; }
+#files li a               {
+	font-family: monospace;
+	white-space: pre;
+}
 .u:before { content: "⬆️"; }
 .d:before { content: "📁"; }
 .f:before { content: "📄"; }
