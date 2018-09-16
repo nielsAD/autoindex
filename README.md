@@ -32,3 +32,53 @@ Usage
 #### Example
 
 `./autoindex -a=":4000" -i=5m -d=/tmp/autoindex.db -cached -r=/mnt/storage`
+
+
+Behind nginx
+------------
+
+Example configuration for running `autoindex` behind an `nginx` proxy.
+
+```
+upstream autoindex {
+        server 127.0.0.1:4000;
+        keepalive 8;
+}
+
+map $request_uri $request_basename {
+        ~/(?<captured_request_basename>[^/?]*)(?:\?|$) $captured_request_basename;
+}
+
+map $request_uri $idx_path {
+        ~/(?<captured_request_path>[^?]*)(?<captured_request_args>\?.*)?$ $captured_request_path/$cap$
+}
+
+server {
+        listen 443 ssl http2;
+        listen [::]:443 ssl http2;
+        server_name _;
+
+        root /opt/autoindex/public;
+
+        location / {
+                rewrite ^/(.*)/$ /$1 permanent;
+                try_files $uri /index.html;
+                expires 1y;
+        }
+
+        location = /index.html {
+                http2_push /idx/$idx_path;
+                expires 1d;
+        }
+
+        location ^~ /dl/ {
+                limit_rate 1m;
+                add_header Content-Disposition 'attachment; filename="$request_basename"';
+                add_header X-Robots-Tag "noindex, nofollow, nosnippet, noarchive";
+        }
+
+        location ~ ^(/idx/|/urllist.txt) {
+                 proxy_pass https://autoindex;
+        }
+}
+```

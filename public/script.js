@@ -85,8 +85,7 @@ function setPath(crumbs, files, q, path, query) {
 	req.open("GET", "/idx/" + path + query, true);
 	req.send();
 }
-
-document.addEventListener("DOMContentLoaded", function() {
+function onLoad() {
 	const path   = document.getElementById("path");
 	const files  = document.getElementById("files");
 	const search = document.getElementById("search");
@@ -102,4 +101,8 @@ document.addEventListener("DOMContentLoaded", function() {
 		const s = q.value ? "?r=1&q=" + encodeURIComponent(q.value) : "";
 		setPath(path, files, q, document.location.pathname, s);
 	});
-});
+}
+if (document.readyState === "loading")
+	document.addEventListener("DOMContentLoaded", onLoad);
+else
+	onLoad();
