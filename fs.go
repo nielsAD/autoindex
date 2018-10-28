@@ -127,7 +127,15 @@ func (fs *CachedFS) Fill() (int, error) {
 
 	cnt := 0
 	dirs := []int64{0}
+	root := fs.Root
 	trim := len(fs.Root)
+
+	if strings.HasSuffix(root, string(filepath.Separator)) {
+		trim--
+	} else {
+		root += string(filepath.Separator)
+	}
+
 	err = walk.Walk(fs.Root, &walk.Options{
 		Error: func(r string, e *walk.Dirent, err error) error {
 			logErr.Printf("Error iterating \"%s\": %s\n", r, err.Error())
@@ -184,13 +192,18 @@ func (fs *CachedFS) Fill() (int, error) {
 				if err != nil {
 					return err
 				}
-				if strings.HasPrefix(a, fs.Root) {
+				if strings.HasPrefix(a, root) {
 					logErr.Printf("Skipping symlink relative to root (%s)\n", r)
 					return filepath.SkipDir
 				}
 			}
 
-			row, err := idir.Exec(r[trim:] + "/")
+			dir := filepath.ToSlash(r[trim:])
+			if dir != "/" {
+				dir += "/"
+			}
+
+			row, err := idir.Exec(dir)
 			if err != nil {
 				return err
 			}
