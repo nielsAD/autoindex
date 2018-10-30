@@ -25,14 +25,15 @@ import (
 
 // CachedFS struct
 type CachedFS struct {
-	ql     *sql.Stmt
-	qd     *sql.Stmt
-	qs     *sql.Stmt
-	db     *sql.DB
-	dbr    int32
-	dbp    string
-	Root   string
-	Cached bool
+	ql      *sql.Stmt
+	qd      *sql.Stmt
+	qs      *sql.Stmt
+	db      *sql.DB
+	dbr     int32
+	dbp     string
+	Root    string
+	Cached  bool
+	Timeout time.Duration
 }
 
 // New CachedFS
@@ -318,7 +319,7 @@ func (fs *CachedFS) serveCache(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), fs.Timeout)
 	defer cancel()
 
 	p := cleanPath(r.URL.Path)
@@ -462,7 +463,7 @@ func (fs *CachedFS) Sitemap(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), fs.Timeout)
 	defer cancel()
 
 	rows, err := fs.ql.QueryContext(ctx)

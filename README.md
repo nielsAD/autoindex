@@ -20,14 +20,15 @@ Usage
 
 `./autoindex [options]`
 
-|     Flag   |  Type  | Description |
-|------------|--------|-------------|
-|`-a`        |`string`|TCP network address to listen for connections|
-|`-d`        |`string`|Database location|
-|`-r`        |`string`|Root directory to serve|
-|`-i`        |`string`|Refresh interval|
-|`-forwarded`|`bool`  |Trust X-Real-IP and X-Forwarded-For headers|
-|`-cached`   |`bool`  |Serve everything from cache (rather than search/recursive queries only)|
+|     Flag   |   Type   | Description |
+|------------|----------|-------------|
+|`-a`        |`string`  |TCP network address to listen for connections|
+|`-d`        |`string`  |Database location|
+|`-r`        |`string`  |Root directory to serve|
+|`-i`        |`string`  |Refresh interval|
+|`-t`        |`duration`|Request timeout|
+|`-forwarded`|`bool`    |Trust X-Real-IP and X-Forwarded-For headers|
+|`-cached`   |`bool`    |Serve everything from cache (rather than search/recursive queries only)|
 
 #### Example
 

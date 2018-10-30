@@ -28,6 +28,7 @@ var (
 	db        = flag.String("d", ":memory:", "Database location")
 	dir       = flag.String("r", ".", "Root directory to serve")
 	refresh   = flag.String("i", "1h", "Refresh interval")
+	timeout   = flag.Duration("t", time.Second, "Request timeout")
 	forwarded = flag.Bool("forwarded", false, "Trust X-Real-IP and X-Forwarded-For headers")
 	cached    = flag.Bool("cached", false, "Serve everything from cache (rather than search/recursive queries only)")
 )
@@ -52,6 +53,7 @@ func main() {
 		logErr.Fatal(err)
 	}
 
+	fs.Timeout = *timeout
 	fs.Cached = *cached
 	defer fs.Close()
 
