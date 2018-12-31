@@ -80,7 +80,7 @@ server {
     }
 
     location ~ ^(/idx/|/urllist.txt) {
-        proxy_pass https://autoindex;
+        proxy_pass http://autoindex;
     }
 }
 ```
