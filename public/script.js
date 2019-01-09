@@ -66,7 +66,7 @@ function setPath(crumbs, files, q, path, query) {
 		const json = JSON.parse(this.responseText || "[]");
 		for (let i = 0; i < json.length; i++) {
 			const n = json[i].name
-			const p = path+encodeURI(json[i].name);
+			const p = path+encodeURIComponent(json[i].name);
 			if ((json[i].type||"")[0] == "f")
 				f.appendChild(el("li", a(false, "/dl/"+p, n, "f", "nofollow")));
 			else
