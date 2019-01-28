@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"path"
 	"path/filepath"
@@ -466,7 +467,13 @@ func (fs *CachedFS) Sitemap(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(context.Background(), fs.Timeout)
 	defer cancel()
 
-	rows, err := fs.ql.QueryContext(ctx)
+	var rows *sql.Rows
+	u, err := url.Parse("https://" + r.Host)
+	if err != nil {
+		goto interr
+	}
+
+	rows, err = fs.ql.QueryContext(ctx)
 	if err != nil {
 		goto interr
 	}
@@ -479,9 +486,8 @@ func (fs *CachedFS) Sitemap(w http.ResponseWriter, r *http.Request) {
 			goto interr
 		}
 
-		w.Write([]byte("https://"))
-		w.Write([]byte(r.Host))
-		w.Write([]byte(path[:len(path)-1]))
+		u.Path = path[:len(path)-1]
+		w.Write([]byte(u.String()))
 		w.Write([]byte{'\n'})
 	}
 	err = rows.Err()
