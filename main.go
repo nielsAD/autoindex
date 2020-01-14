@@ -84,16 +84,16 @@ func main() {
 		}
 	})
 
-	limit := stdlib.NewMiddleware(
-		limiter.New(memory.NewStore(), limiter.Rate{Period: 1 * time.Second, Limit: 5}),
-		stdlib.WithForwardHeader(*forwarded),
-	)
+	limit := stdlib.NewMiddleware(limiter.New(memory.NewStore(), limiter.Rate{Period: 1 * time.Second, Limit: 5}))
 
 	srv := &http.Server{Addr: *addr}
-	http.Handle("/idx/", limit.Handler(logRequest(http.StripPrefix("/idx/", fs))))
-	http.Handle("/dl/", limit.Handler(logRequest(http.StripPrefix("/dl/", nodir(http.FileServer(http.Dir(fs.Root)))))))
-	http.Handle("/urllist.txt", http.HandlerFunc(fs.Sitemap))
-	http.Handle("/", pub)
+	handleDefault := func(p string, h http.Handler) { http.Handle(p, realIP(*forwarded, h)) }
+	handleLimited := func(p string, h http.Handler) { handleDefault(p, limit.Handler(logRequest(http.StripPrefix(p, fs)))) }
+
+	handleLimited("/idx/", fs)
+	handleLimited("/dl/", nodir(http.FileServer(http.Dir(fs.Root))))
+	handleDefault("/urllist.txt", http.HandlerFunc(fs.Sitemap))
+	handleDefault("/", pub)
 
 	go func() {
 		sig := make(chan os.Signal, 1)
@@ -117,6 +117,23 @@ func orHyphen(s string) string {
 		return s
 	}
 	return "-"
+}
+
+func realIP(trustForward bool, han http.Handler) http.Handler {
+	if !trustForward {
+		return han
+	}
+
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if realHost := r.Header.Get("X-Forwarded-Host"); realHost != "" {
+			r.Host = realHost
+		}
+		if realIP := r.Header.Get("X-Real-IP"); realIP != "" {
+			r.RemoteAddr = realIP + ":0"
+		}
+
+		han.ServeHTTP(w, r)
+	})
 }
 
 func logRequest(han http.Handler) http.Handler {
