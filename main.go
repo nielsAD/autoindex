@@ -88,7 +88,7 @@ func main() {
 
 	srv := &http.Server{Addr: *addr}
 	handleDefault := func(p string, h http.Handler) { http.Handle(p, realIP(*forwarded, h)) }
-	handleLimited := func(p string, h http.Handler) { handleDefault(p, limit.Handler(logRequest(http.StripPrefix(p, fs)))) }
+	handleLimited := func(p string, h http.Handler) { handleDefault(p, limit.Handler(logRequest(http.StripPrefix(p, h)))) }
 
 	handleLimited("/idx/", fs)
 	handleLimited("/dl/", nodir(http.FileServer(http.Dir(fs.Root))))

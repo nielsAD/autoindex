@@ -383,7 +383,8 @@ interr:
 }
 
 func (fs *CachedFS) serveLive(w http.ResponseWriter, r *http.Request) {
-	p := cleanPath(filepath.Join(fs.Root, r.URL.Path))
+	p := filepath.Join(fs.Root, filepath.FromSlash(r.URL.Path), "_")
+	p = p[:len(p)-1]
 
 	resp := make(Files, 0)
 	search, err := regexp.Compile(escapeRegex(r.URL.Query().Get("q")))
@@ -406,7 +407,7 @@ func (fs *CachedFS) serveLive(w http.ResponseWriter, r *http.Request) {
 					return nil
 				}
 
-				f := File{Name: r[trim:]}
+				f := File{Name: filepath.ToSlash(r[trim:])}
 				if e.IsDir() {
 					f.Type = "d"
 				} else {
