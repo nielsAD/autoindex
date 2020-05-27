@@ -26,6 +26,7 @@ Usage
 |`-d`        |`string`  |Database location|
 |`-r`        |`string`  |Root directory to serve|
 |`-i`        |`string`  |Refresh interval|
+|`-l`        |`int`     |Request rate limit (req/sec per IP)|
 |`-t`        |`duration`|Request timeout|
 |`-forwarded`|`bool`    |Trust X-Real-IP and X-Forwarded-For headers|
 |`-cached`   |`bool`    |Serve everything from cache (rather than search/recursive queries only)|

@@ -28,6 +28,7 @@ var (
 	db        = flag.String("d", ":memory:", "Database location")
 	dir       = flag.String("r", ".", "Root directory to serve")
 	refresh   = flag.String("i", "1h", "Refresh interval")
+	ratelimit = flag.Int64("l", 5, "Request rate limit (req/sec per IP)")
 	timeout   = flag.Duration("t", time.Second, "Request timeout")
 	forwarded = flag.Bool("forwarded", false, "Trust X-Real-IP and X-Forwarded-For headers")
 	cached    = flag.Bool("cached", false, "Serve everything from cache (rather than search/recursive queries only)")
@@ -84,15 +85,15 @@ func main() {
 		}
 	})
 
-	limit := stdlib.NewMiddleware(limiter.New(memory.NewStore(), limiter.Rate{Period: 1 * time.Second, Limit: 5}))
+	limit := stdlib.NewMiddleware(limiter.New(memory.NewStore(), limiter.Rate{Period: time.Second, Limit: *ratelimit}))
 
 	srv := &http.Server{Addr: *addr}
-	handleDefault := func(p string, h http.Handler) { http.Handle(p, realIP(*forwarded, h)) }
+	handleDefault := func(p string, h http.Handler) { http.Handle(p, realIP(*forwarded, checkMethod(h))) }
 	handleLimited := func(p string, h http.Handler) { handleDefault(p, limit.Handler(logRequest(http.StripPrefix(p, h)))) }
 
 	handleLimited("/idx/", fs)
 	handleLimited("/dl/", nodir(http.FileServer(http.Dir(fs.Root))))
-	handleDefault("/urllist.txt", http.HandlerFunc(fs.Sitemap))
+	handleLimited("/urllist.txt", http.HandlerFunc(fs.Sitemap))
 	handleDefault("/", pub)
 
 	go func() {
@@ -117,6 +118,17 @@ func orHyphen(s string) string {
 		return s
 	}
 	return "-"
+}
+
+func checkMethod(han http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != "HEAD" && r.Method != "GET" {
+			http.Error(w, "405 Method Not Allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		han.ServeHTTP(w, r)
+	})
 }
 
 func realIP(trustForward bool, han http.Handler) http.Handler {

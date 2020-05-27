@@ -316,7 +316,7 @@ func (f Files) Less(i, j int) bool {
 
 func (fs *CachedFS) serveCache(w http.ResponseWriter, r *http.Request) {
 	if !fs.DBReady() {
-		http.Error(w, "503 service unavailable", http.StatusServiceUnavailable)
+		http.Error(w, "503 Service Unavailable", http.StatusServiceUnavailable)
 		return
 	}
 
@@ -461,7 +461,7 @@ func (fs *CachedFS) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 // Sitemap serves a list of all directories
 func (fs *CachedFS) Sitemap(w http.ResponseWriter, r *http.Request) {
 	if !fs.DBReady() {
-		http.Error(w, "503 service unavailable", http.StatusServiceUnavailable)
+		http.Error(w, "503 Service Unavailable", http.StatusServiceUnavailable)
 		return
 	}
 
@@ -480,6 +480,9 @@ func (fs *CachedFS) Sitemap(w http.ResponseWriter, r *http.Request) {
 	}
 	defer rows.Close()
 
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	w.Header().Set("Cache-Control", "max-age=3600")
+
 	for rows.Next() {
 		var path string
 		err = rows.Scan(&path)
@@ -496,8 +499,6 @@ func (fs *CachedFS) Sitemap(w http.ResponseWriter, r *http.Request) {
 		goto interr
 	}
 
-	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	w.Header().Set("Cache-Control", "max-age=3600")
 	return
 
 interr:
