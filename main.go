@@ -25,7 +25,7 @@ import (
 
 var (
 	addr      = flag.String("a", ":80", "TCP network address to listen for connections")
-	db        = flag.String("d", ":memory:", "Database location")
+	db        = flag.String("d", "file::memory:?cache=shared", "Database location")
 	dir       = flag.String("r", ".", "Root directory to serve")
 	refresh   = flag.String("i", "1h", "Refresh interval")
 	ratelimit = flag.Int64("l", 5, "Request rate limit (req/sec per IP)")
