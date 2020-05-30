@@ -320,7 +320,7 @@ func (fs *CachedFS) serveCache(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), fs.Timeout)
+	ctx, cancel := context.WithTimeout(r.Context(), fs.Timeout)
 	defer cancel()
 
 	p := cleanPath(r.URL.Path)
@@ -465,7 +465,7 @@ func (fs *CachedFS) Sitemap(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), fs.Timeout)
+	ctx, cancel := context.WithTimeout(r.Context(), fs.Timeout)
 	defer cancel()
 
 	var rows *sql.Rows
