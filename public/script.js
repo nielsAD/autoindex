@@ -70,7 +70,7 @@ function setPath(crumbs, files, q, path, query) {
 			if ((json[i].type||"")[0] == "f")
 				f.appendChild(el("li", a(false, "/dl/"+p, n, "f", "nofollow")));
 			else
-				f.appendChild(el("li", a(true, "/"+p, n, "d", "")));
+				f.appendChild(el("li", a(true, "/"+p.replace(/%2F/gi, "/"), n, "d", "")));
 		}
 
 		if (f.childNodes.length) {
