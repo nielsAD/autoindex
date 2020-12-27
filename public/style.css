@@ -98,7 +98,7 @@ header {
 	font-family: monospace;
 	white-space: pre;
 }
-.u:before { content: "⬆️"; }
+.u:before { content: "⬆"; }
 .d:before { content: "📁"; }
 .f:before { content: "📄"; }
 .u:before, .d:before, .f:before {
