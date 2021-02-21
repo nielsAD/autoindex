@@ -2,6 +2,8 @@
 // Project: autoindex (https://github.com/nielsAD/autoindex)
 // License: Mozilla Public License, v2.0
 
+// +build !freebsd,!linux,!netbsd,!openbsd
+
 package walk
 
 import (
