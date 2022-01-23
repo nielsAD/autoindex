@@ -1,5 +1,6 @@
 autoindex
 =========
+[![Build Status](https://github.com/nielsAD/autoindex/actions/workflows/build.yml/badge.svg)](https://github.com/nielsAD/autoindex/actions)
 [![License: MPL 2.0](https://img.shields.io/badge/License-MPL%202.0-brightgreen.svg)](https://opensource.org/licenses/MPL-2.0)
 
 Lightweight `go` web server that provides a searchable directory index. Optimized for handling large numbers of files (100k+) and remote file systems (with high latency) through a continously updated directory cache.
