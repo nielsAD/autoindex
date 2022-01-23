@@ -1,11 +1,10 @@
-module github.com/nielsAD/autoindex.git
+module github.com/nielsAD/autoindex
 
-go 1.14
+go 1.17
 
 require (
-	github.com/mattn/go-sqlite3 v1.14.6
-	github.com/nielsAD/autoindex v0.9.1
-	github.com/pkg/errors v0.9.1 // indirect
-	github.com/stretchr/testify v1.7.0 // indirect
-	github.com/ulule/limiter v2.2.2+incompatible
+	github.com/mattn/go-sqlite3 v1.14.10
+	github.com/ulule/limiter/v3 v3.9.0
 )
+
+require github.com/pkg/errors v0.9.1 // indirect
