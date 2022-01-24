@@ -2,6 +2,7 @@
 // Project: autoindex (https://github.com/nielsAD/autoindex)
 // License: Mozilla Public License, v2.0
 
+//go:build freebsd || linux || netbsd || openbsd
 // +build freebsd linux netbsd openbsd
 
 package walk

@@ -98,7 +98,7 @@ func main() {
 
 	go func() {
 		sig := make(chan os.Signal, 1)
-		signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)
+		signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM, os.Interrupt)
 		<-sig
 
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -148,15 +148,6 @@ func realIP(trustForward bool, han http.Handler) http.Handler {
 	})
 }
 
-func logRequest(han http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		u, _, _ := r.BasicAuth()
-		h, _, _ := net.SplitHostPort(r.RemoteAddr)
-		logOut.Printf("%s - %s [%s] \"%s %s %s\" 0 0 \"%s\" \"%s\"\n", h, orHyphen(u), time.Now().Format("02/Jan/2006:15:04:05 -0700"), r.Method, r.URL, r.Proto, orHyphen(r.Referer()), orHyphen(r.UserAgent()))
-		han.ServeHTTP(w, r)
-	})
-}
-
 func nodir(han http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "" || strings.HasSuffix(r.URL.Path, "/") {
@@ -166,4 +157,31 @@ func nodir(han http.Handler) http.Handler {
 
 		han.ServeHTTP(w, r)
 	})
+}
+
+func logRequest(han http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		u, _, _ := r.BasicAuth()
+		h, _, _ := net.SplitHostPort(r.RemoteAddr)
+		logOut.Printf("%.128s - %.256s [%s] %.2048q 0 0 %.2048q %.1024q\n",
+			h,
+			orHyphen(u),
+			time.Now().Format("02/Jan/2006:15:04:05 -0700"),
+			r.Method+" "+r.URL.String()+" "+r.Proto,
+			orHyphen(r.Referer()),
+			orHyphen(r.UserAgent()),
+		)
+		han.ServeHTTP(w, r)
+	})
+}
+
+func logError(code int, err error, w http.ResponseWriter, r *http.Request) {
+	h, _, _ := net.SplitHostPort(r.RemoteAddr)
+	logErr.Printf("%.128s %.2048q %q\n",
+		h,
+		r.Method+" "+r.URL.String()+" "+r.Proto,
+		err.Error(),
+	)
+
+	http.Error(w, err.Error(), code)
 }

@@ -8,7 +8,6 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -255,9 +254,9 @@ func (fs *CachedFS) DBReady() bool {
 }
 
 var (
-	escGlob  = regexp.MustCompile("[][*?]")
+	escGlob  = regexp.MustCompile(`[][*?]`)
 	escLike  = regexp.MustCompile("[%_`]")
-	escSpace = regexp.MustCompile("\\s+")
+	escSpace = regexp.MustCompile(`\s+`)
 )
 
 func escapeGlob(s string) string {
@@ -377,9 +376,7 @@ func (fs *CachedFS) serveCache(w http.ResponseWriter, r *http.Request) {
 	return
 
 interr:
-	h, _, _ := net.SplitHostPort(r.RemoteAddr)
-	logErr.Printf("%s \"%s %s %s\" \"%s\"\n", h, r.Method, r.URL, r.Proto, err.Error())
-	http.Error(w, err.Error(), http.StatusInternalServerError)
+	logError(http.StatusInternalServerError, err, w, r)
 }
 
 func (fs *CachedFS) serveLive(w http.ResponseWriter, r *http.Request) {
@@ -432,14 +429,11 @@ func (fs *CachedFS) serveLive(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	if err != nil {
-		h, _, _ := net.SplitHostPort(r.RemoteAddr)
-		if err == walk.ErrNonDir || os.IsNotExist(err) || os.IsPermission(err) {
-			http.NotFound(w, r)
-		} else {
-			logErr.Printf("%s \"%s %s %s\" \"%s\"\n", h, r.Method, r.URL, r.Proto, err.Error())
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
+	if err == walk.ErrNonDir || os.IsNotExist(err) || os.IsPermission(err) {
+		http.NotFound(w, r)
+		return
+	} else if err != nil {
+		logError(http.StatusInternalServerError, err, w, r)
 		return
 	}
 
@@ -502,7 +496,5 @@ func (fs *CachedFS) Sitemap(w http.ResponseWriter, r *http.Request) {
 	return
 
 interr:
-	h, _, _ := net.SplitHostPort(r.RemoteAddr)
-	logErr.Printf("%s \"%s %s %s\" \"%s\"\n", h, r.Method, r.URL, r.Proto, err.Error())
-	http.Error(w, err.Error(), http.StatusInternalServerError)
+	logError(http.StatusInternalServerError, err, w, r)
 }
