@@ -49,19 +49,19 @@ func main() {
 		interval = i
 	}
 
-	fs, err := New(*db, *dir)
+	cfs, err := New(*db, *dir)
 	if err != nil {
 		logErr.Fatal(err)
 	}
 
-	fs.Timeout = *timeout
-	fs.Cached = *cached
-	defer fs.Close()
+	cfs.Timeout = *timeout
+	cfs.Cached = *cached
+	defer cfs.Close()
 
 	go func() {
 		last := 0
 		for {
-			n, err := fs.Fill()
+			n, err := cfs.Fill()
 			if err != nil {
 				logErr.Printf("Fill: %s\n", err.Error())
 			}
@@ -91,9 +91,9 @@ func main() {
 	handleDefault := func(p string, h http.Handler) { http.Handle(p, realIP(*forwarded, checkMethod(h))) }
 	handleLimited := func(p string, h http.Handler) { handleDefault(p, limit.Handler(logRequest(http.StripPrefix(p, h)))) }
 
-	handleLimited("/idx/", fs)
-	handleLimited("/dl/", nodir(http.FileServer(http.Dir(fs.Root))))
-	handleLimited("/urllist.txt", http.HandlerFunc(fs.Sitemap))
+	handleLimited("/idx/", cfs)
+	handleLimited("/dl/", nodir(http.FileServer(http.Dir(cfs.Root))))
+	handleLimited("/urllist.txt", http.HandlerFunc(cfs.Sitemap))
 	handleDefault("/", pub)
 
 	go func() {
@@ -110,7 +110,7 @@ func main() {
 	logErr.Printf("Serving files in '%s' on %s\n", *dir, *addr)
 	logErr.Println(srv.ListenAndServe())
 
-	fs.Close()
+	cfs.Close()
 }
 
 func orHyphen(s string) string {
