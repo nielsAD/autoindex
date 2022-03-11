@@ -6,13 +6,14 @@ package main
 
 import (
 	"context"
+	"embed"
 	"flag"
+	"io/fs"
 	"log"
 	"net"
 	"net/http"
 	"os"
 	"os/signal"
-	"path"
 	"strings"
 	"syscall"
 	"time"
@@ -33,6 +34,9 @@ var (
 	forwarded = flag.Bool("forwarded", false, "Trust X-Real-IP and X-Forwarded-For headers")
 	cached    = flag.Bool("cached", false, "Serve everything from cache (rather than search/recursive queries only)")
 )
+
+//go:embed public
+var publicFS embed.FS
 
 var logOut = log.New(os.Stdout, "", 0)
 var logErr = log.New(os.Stderr, "", 0)
@@ -76,15 +80,6 @@ func main() {
 		}
 	}()
 
-	pub := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		p := path.Join("./public/", r.URL.Path)
-		if s, err := os.Stat(p); err == nil && !s.IsDir() {
-			http.ServeFile(w, r, p)
-		} else {
-			http.ServeFile(w, r, "./public/index.html")
-		}
-	})
-
 	limit := stdlib.NewMiddleware(limiter.New(memory.NewStore(), limiter.Rate{Period: time.Second, Limit: *ratelimit}))
 
 	srv := &http.Server{Addr: *addr}
@@ -94,7 +89,9 @@ func main() {
 	handleLimited("/idx/", cfs)
 	handleLimited("/dl/", nodir(http.FileServer(http.Dir(cfs.Root))))
 	handleLimited("/urllist.txt", http.HandlerFunc(cfs.Sitemap))
-	handleDefault("/", pub)
+
+	staticRoot, _ := fs.Sub(publicFS, "public")
+	handleDefault("/", http.FileServer(http.FS(staticRoot)))
 
 	go func() {
 		sig := make(chan os.Signal, 1)
