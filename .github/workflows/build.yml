@@ -52,6 +52,7 @@ jobs:
         with:
           name: autoindex_${{ env.ref_name }}_${{ runner.os }}
           path: |
+            public/
             autoindex-*
             LICENSE.txt
             VERSION.txt
