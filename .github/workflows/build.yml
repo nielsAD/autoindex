@@ -42,7 +42,7 @@ jobs:
           Project:  autoindex (https://github.com/nielsAD/autoindex)
           Platform: `go env GOOS`/`go env GOARCH` (`go env GOVERSION`)
           Release:  $REF_NAME ($GITHUB_SHA)
-          Date:     `date --utc`" > VERSION.txt
+          Date:     `date -u`" > VERSION.txt
           mv autoindex.exe autoindex-$REF_NAME.exe || true
           mv autoindex autoindex-$REF_NAME         || true
           mv LICENSE LICENSE.txt
