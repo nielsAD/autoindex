@@ -331,8 +331,11 @@ func (fs *CachedFS) serveCache(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var id int64
-	if fs.qd.QueryRowContext(ctx, p).Scan(&id) != nil {
+	if err := fs.qd.QueryRowContext(ctx, p).Scan(&id); err == sql.ErrNoRows {
 		http.NotFound(w, r)
+		return
+	} else if err != nil {
+		logError(http.StatusInternalServerError, err, w, r)
 		return
 	}
 
@@ -341,7 +344,8 @@ func (fs *CachedFS) serveCache(w http.ResponseWriter, r *http.Request) {
 
 	rows, err := fs.qs.QueryContext(ctx, p, search)
 	if err != nil {
-		goto interr
+		logError(http.StatusInternalServerError, err, w, r)
+		return
 	}
 	defer rows.Close()
 
@@ -349,9 +353,9 @@ func (fs *CachedFS) serveCache(w http.ResponseWriter, r *http.Request) {
 		var root string
 		var name string
 		var dir bool
-		err = rows.Scan(&root, &name, &dir)
-		if err != nil {
-			goto interr
+		if err := rows.Scan(&root, &name, &dir); err != nil {
+			logError(http.StatusInternalServerError, err, w, r)
+			return
 		}
 
 		f := File{Name: root[trim:] + name}
@@ -363,9 +367,10 @@ func (fs *CachedFS) serveCache(w http.ResponseWriter, r *http.Request) {
 
 		resp = append(resp, f)
 	}
-	err = rows.Err()
-	if err != nil {
-		goto interr
+
+	if err := rows.Err(); err != nil {
+		logError(http.StatusInternalServerError, err, w, r)
+		return
 	}
 
 	sort.Sort(resp)
@@ -373,10 +378,6 @@ func (fs *CachedFS) serveCache(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.Header().Set("Cache-Control", "max-age=60")
 	json.NewEncoder(w).Encode(resp)
-	return
-
-interr:
-	logError(http.StatusInternalServerError, err, w, r)
 }
 
 func (fs *CachedFS) serveLive(w http.ResponseWriter, r *http.Request) {
@@ -462,15 +463,16 @@ func (fs *CachedFS) Sitemap(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), fs.Timeout)
 	defer cancel()
 
-	var rows *sql.Rows
 	u, err := url.Parse("https://" + r.Host)
 	if err != nil {
-		goto interr
+		logError(http.StatusInternalServerError, err, w, r)
+		return
 	}
 
-	rows, err = fs.ql.QueryContext(ctx)
+	rows, err := fs.ql.QueryContext(ctx)
 	if err != nil {
-		goto interr
+		logError(http.StatusInternalServerError, err, w, r)
+		return
 	}
 	defer rows.Close()
 
@@ -479,22 +481,17 @@ func (fs *CachedFS) Sitemap(w http.ResponseWriter, r *http.Request) {
 
 	for rows.Next() {
 		var path string
-		err = rows.Scan(&path)
-		if err != nil {
-			goto interr
+		if err := rows.Scan(&path); err != nil {
+			logError(http.StatusInternalServerError, err, w, r)
+			return
 		}
 
 		u.Path = path[:len(path)-1]
 		w.Write([]byte(u.String()))
 		w.Write([]byte{'\n'})
 	}
-	err = rows.Err()
-	if err != nil {
-		goto interr
+
+	if err := rows.Err(); err != nil {
+		logError(http.StatusInternalServerError, err, w, r)
 	}
-
-	return
-
-interr:
-	logError(http.StatusInternalServerError, err, w, r)
 }
